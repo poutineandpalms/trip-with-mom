@@ -1,0 +1,1 @@
+{"author":"","description":"","devDependencies":{"cf":"^1.0.0-beta.16","wrangler":"^4.150.0"},"keywords":[],"license":"ISC","main":"index.js","name":"travel-site","scripts":{"test":"echo \"Error: no test specified\" && exit 1"},"type":"module","version":"1.0.0"}
