@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Andalousie : choisir ses bases — 8 jours, 18–26 nov.</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root{--coral:#e2725b;--navy:#16224a;--ink:#23283b;--muted:#6b7186;--paper:#faf7f2;--card:#fff;--line:#e8e2d8;--teal:#2e7d74}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--paper);color:var(--ink);line-height:1.55}
+  header{padding:28px 20px 10px;max-width:1060px;margin:0 auto}
+  h1{font-family:Georgia,"Times New Roman",serif;font-size:34px;line-height:1.15;margin:0 0 8px;color:var(--navy)}
+  header p{margin:4px 0;color:var(--muted);max-width:720px}
+  header p b{color:var(--ink)}
+  .langrow{display:flex;gap:8px;margin:0 0 12px}
+  .langrow button{border:1.5px solid var(--navy);background:#fff;color:var(--navy);border-radius:999px;padding:6px 14px;font-size:14px;cursor:pointer}
+  .langrow button.on{background:var(--navy);color:#fff}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 20px 40px}
+  #map{height:58vh;min-height:380px;border-radius:16px;border:1px solid var(--line);z-index:1;box-shadow:0 6px 24px rgba(22,34,74,.10)}
+  .num-pin{width:30px;height:30px;border-radius:50% 50% 50% 4px;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+  .num-pin span{transform:rotate(45deg)}
+  .trip-dot{width:12px;height:12px;border-radius:50%;background:#fff;border:3px solid var(--teal);box-shadow:0 1px 5px rgba(0,0,0,.3)}
+  .leaflet-popup-content{font-size:14px;line-height:1.45}
+  .leaflet-popup-content b{color:var(--navy)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
+  .chip{border:1.5px solid var(--navy);background:#fff;color:var(--navy);border-radius:999px;padding:7px 14px;font-size:14px;cursor:pointer}
+  .chip.on{background:var(--navy);color:#fff}
+  .chip.coral{border-color:var(--coral);color:var(--coral)}
+  .chip.coral.on{background:var(--coral);color:#fff}
+  h2{font-family:Georgia,serif;color:var(--navy);font-size:24px;margin:30px 0 6px}
+  .sub{color:var(--muted);margin:0 0 14px}
+  .splits{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:6px}
+  .split{border:1.5px solid var(--line);border-radius:14px;background:var(--card);padding:16px;cursor:pointer;text-align:left;font:inherit}
+  .split h3{margin:0 0 4px;font-size:18px;color:var(--navy)}
+  .split p{margin:6px 0;font-size:14px}
+  .split .route{font-weight:700}
+  .split.on{border-color:var(--coral);box-shadow:0 0 0 2px var(--coral) inset}
+  .badge{display:inline-block;background:var(--coral);color:#fff;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:3px 9px;margin-left:6px;vertical-align:2px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:14px}
+  .card{border:1px solid var(--line);border-radius:16px;background:var(--card);overflow:hidden;scroll-margin-top:16px}
+  .card.sel{box-shadow:0 0 0 3px var(--coral)}
+  .card img{width:100%;height:190px;object-fit:cover;display:block}
+  .card .body{padding:16px}
+  .card h3{margin:0;font-size:21px;color:var(--navy)}
+  .tag{color:var(--coral);font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase}
+  .card p{font-size:14.5px;margin:8px 0}
+  .card h4{margin:14px 0 4px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .card ul{margin:4px 0;padding-left:18px;font-size:14.5px}
+  .card li{margin:5px 0}
+  .pill{display:inline-block;background:#eef3f1;color:var(--teal);border-radius:999px;padding:1px 8px;font-size:12px;font-weight:600;white-space:nowrap}
+  .note{background:#fdf3ef;border-left:3px solid var(--coral);padding:8px 12px;font-size:13.5px;border-radius:0 8px 8px 0;margin:10px 0 0}
+  .howto{border:1px solid var(--line);border-radius:16px;background:var(--card);padding:18px;margin-top:8px}
+  .howto h3{margin:0 0 6px;color:var(--navy)}
+  .howto p,.howto li{font-size:14.5px}
+  footer{color:var(--muted);font-size:13px;margin-top:26px}
+  @media (max-width:640px){h1{font-size:27px}#map{height:52vh;min-height:320px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="langrow"><button id="langFr" class="on">Français</button><button id="langEn">English</button></div>
+  <h1 data-i18n="h1"></h1>
+  <p data-i18n="intro1"></p>
+  <p data-i18n="intro2"></p>
+</header>
+<div class="wrap">
+  <div id="map"></div>
+  <div class="chips" id="chips">
+    <button class="chip on" data-filter="all" data-i18n="chipAll"></button>
+    <button class="chip" data-filter="city" data-i18n="chipCity"></button>
+    <button class="chip" data-filter="country" data-i18n="chipCountry"></button>
+    <button class="chip" data-filter="sea" data-i18n="chipSea"></button>
+    <button class="chip coral" id="clearSel" style="display:none" data-i18n="chipClear"></button>
+  </div>
+
+  <h2 data-i18n="splitsH"></h2>
+  <p class="sub" data-i18n="splitsSub"></p>
+  <div class="splits" id="splits"></div>
+
+  <h2 data-i18n="basesH"></h2>
+  <p class="sub" data-i18n="basesSub"></p>
+  <div class="cards" id="cards"></div>
+
+  <h2 data-i18n="howtoH"></h2>
+  <div class="howto">
+    <h3 data-i18n="howto1H"></h3>
+    <p data-i18n="howto1P"></p>
+    <h3 data-i18n="howto2H"></h3>
+    <p data-i18n="howto2P"></p>
+    <h3 data-i18n="howto3H"></h3>
+    <p data-i18n="howto3P"></p>
+  </div>
+
+  <footer data-i18n="footer"></footer>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const STR={
+fr:{h1:"L'Andalousie : où poser ses valises",
+intro1:"8 jours sur place, du 18 au 26 novembre (flexible jusqu'au 27). Vous atterrissez à Malaga le 18 et vous n'êtes pas obligés d'en repartir — la dernière nuit peut se passer ailleurs. L'idée : trois bases pour dormir, des excursions d'un jour qui rayonnent autour, sans refaire les valises chaque soir.",
+intro2:"Touchez une épingle ou une carte pour voir ce que chaque base permet. Les durées sont des moyennes porte-à-porte ; vérifiez les horaires Renfe/ALSA pour vos dates exactes.",
+chipAll:"Toutes les bases",chipCity:"Villes",chipCountry:"Campagne",chipSea:"Bord de mer",chipClear:"✕ Effacer la sélection",
+splitsH:"Trois façons de partager 8 nuits",
+splitsSub:"Touchez-en une pour la tracer sur la carte. Les trois gardent l'Alhambra, la mer et le pays du xérès. Elles diffèrent par la part de campagne et de ville.",
+basesH:"Les bases",
+basesSub:"Six possibilités. Chaque carte indique ce que vous verrez en y dormant, et ce que vous pouvez cocher en excursion d'un jour — sans y passer la nuit.",
+howtoH:"Se déplacer : trains + une fenêtre en voiture",
+howto1H:"Les trains font les villes",
+howto1P:"Les trains à grande vitesse AVE/Avant relient les quatre grandes villes : Malaga–Cordoue ~55 min, Cordoue–Séville ~45 min, Malaga–Séville ~2 h (direct, via Cordoue), Malaga–Grenade ~1 h 20 sur les quelques trains Avant directs (sinon changement à Antequera, 1 h 30–3 h). Séville–Cadix prend ~1 h 40 en Media Distancia, avec arrêt à Jerez (~1 h 05 depuis Séville, ~40 min depuis Cadix). Réservez à l'avance ; pas besoin de voiture dans les villes — se garer dans les vieux quartiers est la partie pénible.",
+howto2H:"La voiture fait tout le reste",
+howto2P:"Villages blancs, Caminito del Rey, El Torcal, Sierra Nevada, pays des oliviers et Doñana : c'est le territoire de la voiture — les bus existent mais sont lents et rares. La bonne formule : prendre la voiture à Séville, la rendre à Grenade (ou à Malaga le dernier jour). Les routes de montagne autour de Grazalema sont étroites et sinueuses — garez-vous à l'entrée des villages et entrez à pied. Un permis de conduire international est recommandé en complément d'un permis américain pour louer en Espagne.",
+howto3H:"Les bus comblent les vides",
+howto3P:"ALSA relie Malaga et Grenade en ~1 h 45, très fréquemment, et des bus locaux desservent Nerja et Ronda. Le bus Grenade–Malaga est souvent plus rapide que le train.",
+footer:"Travail en cours — Alex partage cette ébauche avec Monique pour recueillir ses commentaires. Billets pour l'Alhambra : réservez bien à l'avance. Le Caminito del Rey est fermé le lundi. Les illuminations de la Calle Larios à Malaga s'allument le 27 novembre, juste après un départ le 26. Distances et durées approximatives.",
+seeHere:"À voir sur place",tripsH:"Excursions d'un jour — sans y dormir",getH:"S'y rendre",cityBase:"Base en ville",countryBase:"Base à la campagne",seaBase:"Base au bord de la mer",popupSee:"Voir la carte ci-dessous.",tradeLbl:"Compromis : ",rec:"Recommandé"},
+en:{h1:"Andalusia: pick your bases",
+intro1:"8 days on the ground, Nov 18–26 (flexible to the 27th). You land in Málaga on the 18th and you don't have to end there — the last night can be anywhere that connects well. The idea: three overnight bases, day trips radiating out, no packing every night.",
+intro2:"Tap a pin or a card to see what each base unlocks. Times are typical door-to-door; check Renfe/ALSA for your exact dates.",
+chipAll:"All bases",chipCity:"Cities",chipCountry:"Countryside",chipSea:"By the sea",chipClear:"✕ Clear selection",
+splitsH:"Three ways to split 8 nights",
+splitsSub:"Tap one to draw it on the map. All three keep the Alhambra, the sea, and the sherry country. They differ in how much countryside vs. city you get.",
+basesH:"The bases",
+basesSub:"Six candidates. Each card lists what you see by staying there, and what you can tick off as a day trip — no overnight needed.",
+howtoH:"Getting around: trains + one car window",
+howto1H:"Trains do the cities",
+howto1P:"High-speed AVE/Avant trains link the big four: Málaga–Córdoba ~55 min, Córdoba–Seville ~45 min, Málaga–Seville ~2h (direct, via Córdoba), Málaga–Granada ~1h20 on the few direct Avant trains (otherwise change at Antequera, 1½–3h). Seville–Cádiz is ~1h40 by Media Distancia, stopping at Jerez (~1h05 from Seville, ~40 min from Cádiz). Book ahead; you don't want a car inside Seville or Granada — parking in the old towns is the painful part.",
+howto2H:"A car does everything else",
+howto2P:"White villages, Caminito del Rey, El Torcal, the Sierra Nevada, olive country and Doñana are car country — buses exist but they're slow and infrequent. The sweet spot: pick up the car in Seville, drop it in Granada (or Málaga on the last day). Mountain roads around Grazalema are narrow and winding — park at the village entrance and walk in. An International Driving Permit is the recommended companion to a US licence when renting in Spain.",
+howto3H:"Buses fill the gaps",
+howto3P:"ALSA runs Málaga–Granada ~1h45, very frequent, and local buses reach Nerja and Ronda. The Granada–Málaga bus is often faster than the train.",
+footer:"Work in progress — Alex is sharing this draft with Monique for her comments. Alhambra tickets: book well ahead. Caminito del Rey is closed on Mondays. The Málaga Calle Larios lights switch on Nov 27, just after a Nov 26 departure. Distances and times are planning approximations.",
+seeHere:"See here",tripsH:"Day trips — no overnight needed",getH:"Getting there",cityBase:"City base",countryBase:"Countryside base",seaBase:"Sea base",popupSee:"See the card below.",tradeLbl:"Trade-off: ",rec:"Recommended"}
+};
+const MODE_FR={"AVE train":"train AVE","train":"train","car":"voiture","bus / car":"bus / voiture","car / guided":"voiture / visite guidée","bus":"bus"};
+const NAME_FR={"Seville":"Séville","Granada":"Grenade","Córdoba":"Cordoue","Cádiz":"Cadix","Málaga":"Malaga","Ronda & the white villages":"Ronda et les villages blancs","Ronda":"Ronda","Nerja & Frigiliana":"Nerja et Frigiliana","El Torcal de Antequera":"El Torcal de Antequera","Caminito del Rey":"Caminito del Rey","Antequera":"Antequera","Jerez de la Frontera":"Jerez de la Frontera","Italica":"Italica","Doñana / El Rocío":"Doñana / El Rocío","Grazalema":"Grazalema","Zahara de la Sierra":"Zahara de la Sierra","Setenil de las Bodegas":"Setenil de las Bodegas","Arcos de la Frontera":"Arcos de la Frontera","Sierra Nevada":"Sierra Nevada","Jaén olive country":"Le pays des oliviers de Jaén","Montefrío":"Montefrío","El Puerto de Santa María":"El Puerto de Santa María","Vejer de la Frontera":"Vejer de la Frontera","Doñana via Sanlúcar":"Doñana via Sanlúcar","Gibraltar":"Gibraltar","Medina Azahara":"Medina Azahara","Montilla-Moriles":"Montilla-Moriles"};
+const BASES=[
+{id:"seville",n:1,name:"Seville",nameFr:"Séville",tag:"The big one",tagFr:"La grande",type:"city",coords:[37.3891,-5.9845],
+ img:"https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0e/Sevilla_-_Plaza_de_Espa%C3%B1a_-_3.jpg/1920px-Sevilla_-_Plaza_de_Espa%C3%B1a_-_3.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+ alt:"Seville, Andalusia, Spain",
+ why:"Andalusia at its most generous: the Cathedral and Giralda, the Alcázar palaces, Plaza de España, and Triana across the river for flamenco and ceramics. The Feria del Belén nativity fair runs Nov 7–Dec 23, so the city is already dressing up while you're there.",
+ whyFr:"L'Andalousie dans toute sa générosité : la cathédrale et la Giralda, les palais de l'Alcázar, la Plaza de España, et Triana de l'autre côté du fleuve pour le flamenco et la céramique. La Feria del Belén (marché des crèches) dure du 7 nov. au 23 déc. : la ville est déjà en fête pendant votre séjour.",
+ see:"Cathedral & Giralda, Real Alcázar, Plaza de España, Triana, Feria del Belén, flamenco in the evening.",
+ seeFr:"Cathédrale et Giralda, Alcázar royal, Plaza de España, Triana, Feria del Belén, flamenco en soirée.",
+ get:"~2h by direct train from Málaga (via Córdoba). No car needed in the city — walkable centre, and parking is painful.",
+ getFr:"~2 h de train direct depuis Malaga (via Cordoue). Pas besoin de voiture en ville — centre piétonnier, et se garer est pénible.",
+ note:"Best-connected base in the region: three day-trip directions from one front door.",
+ noteFr:"La base la mieux connectée de la région : trois directions d'excursion depuis une seule porte.",
+ trips:[
+  {name:"Córdoba",time:"~45 min",mode:"AVE train",coords:[37.8882,-4.7794],blurb:"The Mezquita — one of Europe's great interiors — plus patios and the Jewish quarter. The classic easy day trip.",blurbFr:"La Mezquita — l'un des plus grands intérieurs d'Europe — plus les patios et le quartier juif. L'excursion facile par excellence."},
+  {name:"Cádiz",time:"~1h40",mode:"train",coords:[36.5297,-6.2927],blurb:"The sea day: Atlantic old town, Torre Tavira, seafood bars. The ocean stop that still feels like a real city.",blurbFr:"La journée mer : vieille ville atlantique, Torre Tavira, bars à fruits de mer. L'escale océane qui ressemble encore à une vraie ville."},
+  {name:"Jerez de la Frontera",time:"~1h05",mode:"train",coords:[36.685,-6.1261],blurb:"Sherry capital — grand bodegas open year-round, plus the dancing horses of the Royal Andalusian School.",blurbFr:"Capitale du xérès — grandes bodegas ouvertes toute l'année, plus les chevaux danseurs de l'École royale andalouse."},
+  {name:"Italica",time:"~25 min",mode:"bus / car",coords:[37.4411,-6.0489],blurb:"Roman ruins with one of the largest amphitheatres in the empire, just outside the city.",blurbFr:"Ruines romaines avec l'un des plus grands amphithéâtres de l'empire, juste à la sortie de la ville."},
+  {name:"Doñana / El Rocío",time:"~1h",mode:"car / guided",coords:[37.1306,-6.4859],blurb:"Wetlands and wild horses; autumn brings the wintering birds. Guided visits work best.",blurbFr:"Zones humides et chevaux sauvages ; l'automne amène les oiseaux hivernants. Mieux en visite guidée."}]},
+{id:"ronda",n:2,name:"Ronda & the white villages",nameFr:"Ronda et les villages blancs",tag:"The countryside base",tagFr:"La base à la campagne",type:"country",coords:[36.7424,-5.1667],
+ img:"https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b8/View_of_Puente_Nuevo_bridge_in_Ronda_Spain.jpg/1920px-View_of_Puente_Nuevo_bridge_in_Ronda_Spain.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+ alt:"Ronda, Andalusia, Spain",
+ why:"The Portugal model: a rural stay in the Sierra de Grazalema, with a car, radiating out to villages by day. Ronda hangs over the Tajo gorge on the Puente Nuevo bridge; around it, white villages, cork oaks and mountain air. Stay in or near Ronda (or tiny Grazalema) and let the loop come to you.",
+ whyFr:"Le modèle portugais : un séjour rural dans la Sierra de Grazalema, avec une voiture, en rayonnant vers les villages le jour. Ronda est suspendue au-dessus de la gorge du Tajo sur le pont Puente Nuevo ; autour, villages blancs, chênes-lièges et air de montagne. Dormez à Ronda ou près de là (ou dans la minuscule Grazalema) et laissez la boucle venir à vous.",
+ see:"Puente Nuevo and the gorge, Ronda's old town and small bodegas, village lanes, stargazing-level quiet at night.",
+ seeFr:"Le Puente Nuevo et la gorge, la vieille ville de Ronda et ses petites bodegas, les ruelles des villages, un silence de carte postale la nuit.",
+ get:"Car is the point here. ~2h drive from Seville, ~1h15 from Málaga. A train exists from Málaga (~2h via Bobadilla) but you want the car once you're there.",
+ getFr:"La voiture est l'idée même ici. ~2 h de route depuis Séville, ~1 h 15 depuis Malaga. Un train existe depuis Malaga (~2 h via Bobadilla), mais une fois sur place, c'est la voiture qu'il faut.",
+ note:"Mountain roads are narrow and winding — plan ~35–40 mph on the village lanes, and park at the village entrance.",
+ noteFr:"Les routes de montagne sont étroites et sinueuses — prévoyez ~55–65 km/h sur les routes des villages, et garez-vous à l'entrée.",
+ trips:[
+  {name:"Grazalema",time:"~40 min",mode:"car",coords:[36.7589,-5.3667],blurb:"High in the natural park: steep lanes, hiking, griffon vultures overhead, proper away-from-it-all feeling.",blurbFr:"Haut dans le parc naturel : ruelles pentues, randonnée, vautours fauves au-dessus, vrai sentiment d'ailleurs."},
+  {name:"Zahara de la Sierra",time:"~30 min",mode:"car",coords:[36.8403,-5.3908],blurb:"The postcard: castle on the crag, white houses tumbling to a turquoise reservoir. An hour is plenty.",blurbFr:"La carte postale : château sur le rocher, maisons blanches descendant vers un réservoir turquoise. Une heure suffit."},
+  {name:"Setenil de las Bodegas",time:"~20 min",mode:"car",coords:[36.7311,-5.1819],blurb:"Streets where the cliff overhangs the houses like a roof. Half a day, best paired with Ronda.",blurbFr:"Des rues où la falaise surplombe les maisons comme un toit. Une demi-journée, à combiner avec Ronda."},
+  {name:"Caminito del Rey",time:"~45 min",mode:"car",coords:[36.9156,-4.7728],blurb:"Walkway pinned to the gorge walls, high above the river. Thrilling, very safe, unforgettable — closed Mondays.",blurbFr:"Passerelle accrochée aux parois de la gorge, haut au-dessus de la rivière. Sensations fortes, très sûr, inoubliable — fermé le lundi."},
+  {name:"Arcos de la Frontera",time:"~1h",mode:"car",coords:[36.75,-5.8056],blurb:"Clifftop white town on the western edge of the village route; park low, take the minibus up.",blurbFr:"Ville blanche sur falaise, à l'extrémité ouest de la route des villages ; garez-vous en bas, prenez la navette."},
+  {name:"Jerez de la Frontera",time:"~1h15",mode:"car",coords:[36.685,-6.1261],blurb:"Sherry bodegas from the village side — an easy western swing.",blurbFr:"Les bodegas de xérès côté villages — une escapade facile vers l'ouest."}]},
+{id:"granada",n:3,name:"Granada",nameFr:"Grenade",tag:"Alhambra & Albaicín",tagFr:"Alhambra et Albaicín",type:"city",coords:[37.1773,-3.5986],
+ img:"https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cf/Alhambra_evening_panorama_Mirador_San_Nicolas_sRGB-1.jpg/1920px-Alhambra_evening_panorama_Mirador_San_Nicolas_sRGB-1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+ alt:"Granada, Andalusia, Spain",
+ why:"The Alhambra — book tickets well ahead — with the whitewashed Albaicín lanes and views across to the Sierra Nevada. The most dramatic city on the trip; November light on the palace walls is something else. The one must-see on the trip.",
+ whyFr:"L'Alhambra — réservez les billets bien à l'avance — avec les ruelles blanchies de l'Albaicín et les vues sur la Sierra Nevada. La ville la plus spectaculaire du voyage ; la lumière de novembre sur les murs du palais est incomparable. L'incontournable du voyage.",
+ see:"Alhambra & Generalife (a full day), Albaicín viewpoints at sunset, Sacromonte caves, tapas that still come free with a drink.",
+ seeFr:"Alhambra et Generalife (une journée entière), belvédères de l'Albaicín au coucher du soleil, grottes du Sacromonte, tapas encore offertes avec une boisson.",
+ get:"Avant ~1h20 from Málaga on the few direct trains (otherwise change at Antequera); bus ~1h45, very frequent. From Seville ~2½–3h by train/bus.",
+ getFr:"Avant ~1 h 20 depuis Malaga sur les quelques trains directs (sinon changement à Antequera) ; bus ~1 h 45, très fréquent. Depuis Séville ~2 h 30–3 h en train/bus.",
+ note:"Give the Alhambra a full, unhurried day — it doesn't work as a rushed stop.",
+ noteFr:"Consacrez une journée entière et tranquille à l'Alhambra — ça ne fonctionne pas en visite pressée.",
+ trips:[
+  {name:"Sierra Nevada",time:"~45 min",mode:"car / bus",coords:[37.095,-3.399],blurb:"Pradollano and the high viewpoints; late-November peaks may already carry snow while the valleys stay mild.",blurbFr:"Pradollano et les belvédères d'altitude ; fin novembre, les sommets portent peut-être déjà de la neige alors que les vallées restent douces."},
+  {name:"Jaén olive country",time:"~1h",mode:"car",coords:[37.7796,-3.7849],blurb:"November is harvest: mills working, oleotourism at its best, plus the golden Renaissance towns of Úbeda and Baeza nearby.",blurbFr:"Novembre, c'est la récolte : moulins en activité, oléotourisme au meilleur, plus les villes Renaissance dorées d'Úbeda et Baeza tout près."},
+  {name:"Nerja & Frigiliana",time:"~1h",mode:"car",coords:[36.7458,-3.8769],blurb:"Balcón de Europa over the sea, the Nerja caves, and Frigiliana's whitewashed lanes — the coast day from the Granada side.",blurbFr:"Le Balcón de Europa sur la mer, les grottes de Nerja et les ruelles blanchies de Frigiliana — la journée côte depuis Grenade."},
+  {name:"Montefrío",time:"~50 min",mode:"car",coords:[37.3214,-4.0117],blurb:"A quiet white village with one of the great church-on-the-rock views; an easy half-day.",blurbFr:"Un village blanc tranquille avec l'une des plus belles vues d'église sur rocher ; une demi-journée facile."}]},
+{id:"malaga",n:4,name:"Málaga",nameFr:"Malaga",tag:"Gateway & old town",tagFr:"Porte d'entrée et vieille ville",type:"sea",coords:[36.7213,-4.4214],
+ img:"https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ac/Alcazaba%2C_M%C3%A1laga%2C_Espa%C3%B1a%2C_2023-05-20%2C_DD_98.jpg/1920px-Alcazaba%2C_M%C3%A1laga%2C_Espa%C3%B1a%2C_2023-05-20%2C_DD_98.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+ alt:"Málaga, Andalusia, Spain",
+ why:"The natural front door: a working port city with the Alcazaba fortress above the old town, the Picasso Museum, and a lively harbourfront. In late November it's at its most local — warm days, quiet beaches, full terraces.",
+ whyFr:"La porte d'entrée naturelle : une ville portuaire active avec la forteresse de l'Alcazaba au-dessus de la vieille ville, le musée Picasso et un front de port animé. Fin novembre, elle est au plus local — journées douces, plages tranquilles, terrasses pleines.",
+ see:"Alcazaba & Gibralfaro, Picasso Museum, the old town and the harbourfront promenade.",
+ seeFr:"Alcazaba et Gibralfaro, musée Picasso, vieille ville et promenade du port.",
+ get:"You land here. Airport 15 min from the centre. Trains to Córdoba, Seville and Granada all leave from María Zambrano station.",
+ getFr:"Vous atterrissez ici. Aéroport à 15 min du centre. Les trains pour Cordoue, Séville et Grenade partent tous de la gare María Zambrano.",
+ note:"The Calle Larios lights switch on Nov 27 — just after a Nov 26 departure, so you'd catch the build-up, not the switch-on.",
+ noteFr:"Les illuminations de la Calle Larios s'allument le 27 nov. — juste après un départ le 26, vous verriez les préparatifs, pas l'allumage.",
+ trips:[
+  {name:"Nerja & Frigiliana",time:"~50 min",mode:"car / bus",coords:[36.7458,-3.8769],blurb:"Cliffs, caves and the prettiest village lanes on the coast — an easy sunny day out.",blurbFr:"Falaises, grottes et les plus jolies ruelles de la côte — une journée ensoleillée facile."},
+  {name:"El Torcal de Antequera",time:"~45 min",mode:"car",coords:[36.9536,-4.5392],blurb:"A limestone labyrinth of wind-sculpted towers; short marked trails, surreal light. Weather permitting.",blurbFr:"Un labyrinthe calcaire de tours sculptées par le vent ; courts sentiers balisés, lumière surréaliste. Si le temps le permet."},
+  {name:"Caminito del Rey",time:"~1h",mode:"car",coords:[36.9156,-4.7728],blurb:"The gorge walkway — closed Mondays, book the slot ahead.",blurbFr:"La passerelle de la gorge — fermée le lundi, réservez le créneau à l'avance."},
+  {name:"Antequera",time:"~45 min",mode:"car / train",coords:[37.0194,-4.5612],blurb:"Dolmens, churches and a castle town midway to Granada; a natural stopover on the transfer day.",blurbFr:"Dolmens, églises et ville-château à mi-chemin de Grenade ; une halte naturelle le jour du transfert."},
+  {name:"Ronda",time:"~1h15",mode:"car",coords:[36.7424,-5.1667],blurb:"The gorge town as a long day trip — doable, but it earns an overnight (see the countryside base).",blurbFr:"La ville de la gorge en longue excursion — faisable, mais elle mérite une nuit (voir la base à la campagne)."}]},
+{id:"cadiz",n:5,name:"Cádiz",nameFr:"Cadix",tag:"Atlantic old town",tagFr:"Vieille ville atlantique",type:"sea",coords:[36.5297,-6.2927],
+ img:"https://thumb.wikimedia.org/wikipedia/commons/thumb/3/35/Playa_de_la_Caleta%2C_C%C3%A1diz%2C_Espa%C3%B1a%2C_2015-12-08%2C_DD_53.JPG/1920px-Playa_de_la_Caleta%2C_C%C3%A1diz%2C_Espa%C3%B1a%2C_2015-12-08%2C_DD_53.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+ alt:"Cádiz, Andalusia, Spain",
+ why:"The sea city, properly: an ancient Atlantic old town on a peninsula, all sea light, seafood bars and watchtowers — climb Torre Tavira for the camera obscura and the rooftops. The ocean stop that still feels like a real city, not a resort.",
+ whyFr:"La ville de la mer, vraiment : une vieille ville atlantique millénaire sur une presqu'île, toute en lumière marine, bars à fruits de mer et tours de guet — montez à la Torre Tavira pour la camera obscura et les toits. L'escale océane qui ressemble encore à une vraie ville, pas à une station balnéaire.",
+ see:"La Caleta beach, Torre Tavira, the cathedral, the fish market and the tapas crawl through the old town.",
+ seeFr:"Plage de La Caleta, Torre Tavira, cathédrale, marché aux poissons et tournée des tapas dans la vieille ville.",
+ get:"~1h40 by train from Seville, right into the old town. Easy to pair with Jerez on the same rail line.",
+ getFr:"~1 h 40 de train depuis Séville, jusque dans la vieille ville. Facile à combiner avec Jerez sur la même ligne.",
+ note:"The slowest, saltiest base on the list — best as the exhale at the end of the trip.",
+ noteFr:"La base la plus lente et la plus iodée de la liste — idéale comme respiration en fin de voyage.",
+ trips:[
+  {name:"Jerez de la Frontera",time:"~40 min",mode:"train",coords:[36.685,-6.1261],blurb:"Sherry bodegas and horses, an easy hop up the line.",blurbFr:"Bodegas de xérès et chevaux, un saut facile sur la ligne."},
+  {name:"El Puerto de Santa María",time:"~25 min",mode:"train",coords:[36.5939,-6.2277],blurb:"Sherry bodegas on the bay side and a pretty fishing harbour for lunch.",blurbFr:"Bodegas de xérès côté baie et joli port de pêche pour le déjeuner."},
+  {name:"Vejer de la Frontera",time:"~45 min",mode:"car / bus",coords:[36.2529,-5.9647],blurb:"Hilltop white town with sweeping views — the prettiest detour on the coast road.",blurbFr:"Ville blanche sur colline avec vues immenses — le plus joli détour de la route côtière."},
+  {name:"Doñana via Sanlúcar",time:"~40 min",mode:"car",coords:[36.7781,-6.3537],blurb:"Wetlands and the Sanlúcar sherry town at the river mouth.",blurbFr:"Zones humides et la ville de xérès de Sanlúcar à l'embouchure."},
+  {name:"Gibraltar",time:"~1h45",mode:"car",coords:[36.1378,-5.3537],blurb:"Stretch day: the Rock, the apes, the strait. Bring passports.",blurbFr:"Journée rallongée : le Rocher, les singes, le détroit. Passeports à prévoir."}]},
+{id:"cordoba",n:6,name:"Córdoba",nameFr:"Cordoue",tag:"Mezquita & patios",tagFr:"Mezquita et patios",type:"city",coords:[37.8882,-4.7794],
+ img:"https://thumb.wikimedia.org/wikipedia/commons/thumb/8/86/Mezquita-catedral_de_C%C3%B3rdoba_interior_20.jpg/1920px-Mezquita-catedral_de_C%C3%B3rdoba_interior_20.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+ alt:"Córdoba, Andalusia, Spain",
+ why:"The Mezquita is one of the great interiors of Europe — a forest of arches inside a cathedral. The old Jewish quarter and its flower-filled patios make for slow, beautiful wandering, and it's an easy train ride from Seville or Málaga.",
+ whyFr:"La Mezquita est l'un des grands intérieurs d'Europe — une forêt d'arches dans une cathédrale. L'ancien quartier juif et ses patios fleuris invitent à flâner lentement, et c'est un trajet de train facile depuis Séville ou Malaga.",
+ see:"Mezquita-Catedral, the Jewish quarter, the patios, the Roman bridge at dusk.",
+ seeFr:"Mezquita-cathédrale, quartier juif, patios, pont romain au crépuscule.",
+ get:"~45 min by AVE from Seville, ~55 min from Málaga — right on the high-speed line, so it works as a stop between bases too.",
+ getFr:"~45 min en AVE depuis Séville, ~55 min depuis Malaga — en plein sur la ligne à grande vitesse, donc possible aussi comme halte entre deux bases.",
+ note:"The first night to cut if space gets tight — it works beautifully as a day trip from Seville, and only needs a night if you want slow patio evenings.",
+ noteFr:"La première nuit à couper si le temps manque — elle se visite très bien en excursion d'un jour depuis Séville, et ne demande une nuit que pour des soirées lentes dans les patios.",
+ trips:[
+  {name:"Medina Azahara",time:"~20 min",mode:"bus / car",coords:[37.913,-4.856],blurb:"The caliph's palace-city outside town — half a day of extraordinary ruins.",blurbFr:"La ville-palais du calife hors les murs — une demi-journée de ruines extraordinaires."},
+  {name:"Montilla-Moriles",time:"~40 min",mode:"car",coords:[37.5856,-4.6389],blurb:"Andalusia's quieter wine country: Pedro Ximénez from sun-dried grapes, small family bodegas, almost no tour buses.",blurbFr:"Le vignoble plus tranquille de l'Andalousie : Pedro Ximénez de raisins séchés au soleil, petites bodegas familiales, presque pas de cars de touristes."},
+  {name:"Jaén olive country",time:"~1h15",mode:"car",coords:[37.7796,-3.7849],blurb:"Harvest-season mills and the Renaissance towns of Úbeda and Baeza.",blurbFr:"Moulins de la récolte et villes Renaissance d'Úbeda et Baeza."},
+  {name:"Seville",time:"~45 min",mode:"AVE train",coords:[37.3891,-5.9845],blurb:"The reverse day trip — Córdoba as a base still keeps the big city in easy reach.",blurbFr:"L'excursion inverse — Cordoue comme base garde quand même la grande ville à portée."}]}
+];
+const SPLITS=[
+ {id:"A",name:"A · Classic triangle",nameFr:"A · Le triangle classique",route:"Málaga 2 → Seville 3 → Granada 3",routeFr:"Malaga 2 → Séville 3 → Grenade 3",bases:["malaga","seville","granada"],
+  why:"Cities and sea, no car hassle. Trains do every transfer; rent a car for one day only if you want Ronda or El Torcal.",
+  whyFr:"Villes et mer, sans tracas de voiture. Les trains font tous les transferts ; louez une voiture pour une seule journée si vous voulez Ronda ou El Torcal.",
+  trade:"No countryside stay — the white villages are seen from the road or as one long day trip, not lived in. Departure day: Granada → Málaga airport ~1½h.",
+  tradeFr:"Pas de séjour à la campagne — les villages blancs sont vus depuis la route ou en une longue excursion, pas vécus. Jour du départ : Grenade → aéroport de Malaga ~1 h 30."},
+ {id:"B",name:"B · The Portugal model",nameFr:"B · Le modèle portugais",rec:true,route:"Seville 3 → Ronda countryside 2 → Granada 3",routeFr:"Séville 3 → campagne de Ronda 2 → Grenade 3",bases:["seville","ronda","granada"],
+  why:"Your Portugal shape: one rural stay with a car, day trips radiating out, cities at both ends. Land in Málaga, train straight to Seville on day one; pick up the car in Seville, drop it in Granada.",
+  whyFr:"La forme portugaise : un séjour rural avec une voiture, des excursions qui rayonnent, des villes aux deux bouts. Atterrissage à Malaga, train direct pour Séville le premier jour ; voiture prise à Séville, rendue à Grenade.",
+  trade:"Málaga gets no overnight (just the airport), and Nerja becomes a stretch day trip from Granada. The sea comes via the Cádiz day trip from Seville.",
+  tradeFr:"Malaga n'a pas de nuit (juste l'aéroport), et Nerja devient une excursion rallongée depuis Grenade. La mer vient par l'excursion à Cadix depuis Séville."},
+ {id:"C",name:"C · Sea finish",nameFr:"C · Finir par la mer",route:"Seville 3 → Granada 2 → Cádiz 3",routeFr:"Séville 3 → Grenade 2 → Cadix 3",bases:["seville","granada","cadiz"],
+  why:"Ends slow and salty: three Atlantic evenings after the Alhambra. Cádiz is the exhale, and Jerez is 40 minutes away.",
+  whyFr:"Une fin lente et iodée : trois soirées atlantiques après l'Alhambra. Cadix est la respiration, et Jerez est à 40 minutes.",
+  trade:"No countryside stay; Ronda and Grazalema are skipped or become a very long day trip. Departure day: train Cádiz → Seville (~1h40) and onward from there.",
+  tradeFr:"Pas de séjour à la campagne ; Ronda et Grazalema sont sautées ou deviennent une très longue excursion. Jour du départ : train Cadix → Séville (~1 h 40), puis la suite depuis là."}
+];
+let lang=localStorage.getItem("bases-lang")||"fr";
+let filter="all", selected=null;
+const map=L.map("map").setView([37.25,-4.9],8);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
+const COLORS={city:"#16224a",country:"#7a4a1f",sea:"#2e7d74"};
+const byId={}; BASES.forEach(b=>byId[b.id]=b);
+const T=()=>STR[lang];
+const Lname=b=>lang==="fr"?b.nameFr:b.name;
+const Ltag=b=>lang==="fr"?b.tagFr:b.tag;
+const Lmode=m=>lang==="fr"?(MODE_FR[m]||m):m;
+const Ltrip=t=>lang==="fr"?(NAME_FR[t.name]||t.name):t.name;
+let baseMarkers={}, tripMarkers=[], linkLines=[], routeLine=null;
+function pinIcon(b){return L.divIcon({className:"",html:`<div class="num-pin" style="background:${COLORS[b.type]}"><span>${b.n}</span></div>`,iconSize:[30,30],iconAnchor:[15,28]});}
+function popupHtml(b){return `<b>${Lname(b)}</b><br>${Ltag(b)}<br><i>${T().popupSee}</i>`;}
+function tooltipHtml(d){return `${Ltrip(d._trip)} · ${d._trip.time} ${lang==="fr"?"en":""}${Lmode(d._trip.mode)} ${lang==="fr"?"depuis":"from"} ${Lname(byId[d._base])}`;}
+BASES.forEach(b=>{
+  const m=L.marker(b.coords,{icon:pinIcon(b),title:Lname(b)}).addTo(map);
+  m.bindPopup(popupHtml(b));
+  m.on("click",()=>selectBase(b.id,true));
+  baseMarkers[b.id]=m;
+  b.trips.forEach(t=>{
+    const d=L.circleMarker(t.coords,{radius:6,weight:2,color:"#2e7d74",fillColor:"#fff",fillOpacity:1}).addTo(map);
+    d.bindTooltip(tooltipHtml({ _base:b.id,_trip:t}),{direction:"top"});
+    d._base=b.id; d._trip=t; tripMarkers.push(d);
+  });
+});
+function clearLinks(){linkLines.forEach(l=>map.removeLayer(l));linkLines=[];if(routeLine){map.removeLayer(routeLine);routeLine=null;}}
+function highlightTrips(baseId){tripMarkers.forEach(d=>{const on=!baseId||d._base===baseId;d.setStyle({opacity:on?1:.18,fillOpacity:on?1:.25});});}
+function selectBase(id,scroll){
+  selected=id; clearLinks();
+  const b=byId[id];
+  highlightTrips(id);
+  b.trips.forEach(t=>{linkLines.push(L.polyline([b.coords,t.coords],{color:"#2e7d74",weight:1.5,dashArray:"4 6",opacity:.8}).addTo(map));});
+  map.flyTo(b.coords,9,{duration:.8});
+  document.querySelectorAll(".card").forEach(c=>c.classList.toggle("sel",c.dataset.id===id));
+  document.getElementById("clearSel").style.display="inline-block";
+  if(scroll){const el=document.querySelector(`.card[data-id="${id}"]`); if(el) el.scrollIntoView({behavior:"smooth",block:"start"});}
+}
+function clearSelection(){
+  selected=null; clearLinks(); highlightTrips(null);
+  document.querySelectorAll(".card").forEach(c=>c.classList.remove("sel"));
+  document.getElementById("clearSel").style.display="none";
+  document.querySelectorAll(".split").forEach(s=>s.classList.remove("on"));
+  map.flyTo([37.25,-4.9],8,{duration:.8});
+}
+document.getElementById("clearSel").addEventListener("click",clearSelection);
+function typeLabel(t){return t==="city"?T().cityBase:t==="country"?T().countryBase:T().seaBase;}
+function renderCards(){
+  const el=document.getElementById("cards"); el.innerHTML="";
+  BASES.filter(b=>filter==="all"||b.type===filter).forEach(b=>{
+    const fr=lang==="fr";
+    const card=document.createElement("article");
+    card.className="card"+(selected===b.id?" sel":""); card.dataset.id=b.id;
+    card.innerHTML=`<img src="${b.img}" alt="${b.alt}" loading="lazy">
+      <div class="body"><div class="tag">${Ltag(b)} · ${typeLabel(b.type)}</div>
+      <h3>${b.n}. ${Lname(b)}</h3><p>${fr?b.whyFr:b.why}</p>
+      <h4>${T().seeHere}</h4><p>${fr?b.seeFr:b.see}</p>
+      <h4>${T().tripsH}</h4>
+      <ul>${b.trips.map(t=>`<li><b>${Ltrip(t)}</b> <span class="pill">${t.time} · ${Lmode(t.mode)}</span><br>${fr?t.blurbFr:t.blurb}</li>`).join("")}</ul>
+      <h4>${T().getH}</h4><p>${fr?b.getFr:b.get}</p>
+      <div class="note">${fr?b.noteFr:b.note}</div></div>`;
+    card.addEventListener("click",()=>selectBase(b.id,false));
+    el.appendChild(card);
+  });
+}
+function renderSplits(){
+  const el=document.getElementById("splits"); el.innerHTML="";
+  SPLITS.forEach(s=>{
+    const fr=lang==="fr";
+    const b=document.createElement("button");
+    b.className="split"; b.dataset.split=s.id;
+    b.innerHTML=`<h3>${fr?s.nameFr:s.name}${s.rec?`<span class="badge">${T().rec}</span>`:""}</h3>
+      <p class="route">${fr?s.routeFr:s.route}</p><p>${fr?s.whyFr:s.why}</p><p><b>${T().tradeLbl}</b>${fr?s.tradeFr:s.trade}</p>`;
+    b.addEventListener("click",()=>{
+      document.querySelectorAll(".split").forEach(x=>x.classList.remove("on"));
+      b.classList.add("on");
+      clearLinks(); highlightTrips(null);
+      document.querySelectorAll(".card").forEach(c=>c.classList.toggle("sel",s.bases.includes(c.dataset.id)));
+      const pts=s.bases.map(id=>byId[id].coords);
+      routeLine=L.polyline(pts,{color:"#e2725b",weight:3,opacity:.9}).addTo(map);
+      map.flyToBounds(L.latLngBounds(pts).pad(.35),{duration:.8});
+    });
+    el.appendChild(b);
+  });
+}
+function applyLang(){
+  document.documentElement.lang=lang;
+  document.querySelectorAll("[data-i18n]").forEach(n=>{const k=n.dataset.i18n; if(T()[k]!==undefined) n.textContent=T()[k];});
+  document.getElementById("langFr").classList.toggle("on",lang==="fr");
+  document.getElementById("langEn").classList.toggle("on",lang==="en");
+  renderCards(); renderSplits();
+  BASES.forEach(b=>{
+    baseMarkers[b.id].setPopupContent(popupHtml(b));
+    baseMarkers[b.id].options.title=Lname(b);
+  });
+  tripMarkers.forEach(d=>d.setTooltipContent(tooltipHtml(d)));
+  if(selected) document.querySelectorAll(".card").forEach(c=>c.classList.toggle("sel",c.dataset.id===selected));
+}
+document.getElementById("langFr").addEventListener("click",()=>{lang="fr";localStorage.setItem("bases-lang","fr");applyLang();});
+document.getElementById("langEn").addEventListener("click",()=>{lang="en";localStorage.setItem("bases-lang","en");applyLang();});
+document.querySelectorAll("#chips .chip[data-filter]").forEach(ch=>{
+  ch.addEventListener("click",()=>{
+    document.querySelectorAll("#chips .chip[data-filter]").forEach(c=>c.classList.remove("on"));
+    ch.classList.add("on");
+    filter=ch.dataset.filter;
+    renderCards();
+    BASES.forEach(b=>{
+      const show=filter==="all"||b.type===filter;
+      if(show) baseMarkers[b.id].addTo(map); else map.removeLayer(baseMarkers[b.id]);
+    });
+    tripMarkers.forEach(d=>{const show=filter==="all"||byId[d._base].type===filter; if(show) d.addTo(map); else map.removeLayer(d);});
+    clearSelection();
+  });
+});
+applyLang();
+</script>
+</body>
+</html>
